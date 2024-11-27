@@ -1,4 +1,4 @@
-module github.com/ShekleinAleksey/JWT-Auth
+module github.com/ShekleinAleksey/jwt-auth
 
 go 1.21.6
 
