@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func refresh(c *gin.Context) {
+func Refresh(c *gin.Context) {
 	fmt.Println(c)
 	c.JSON(http.StatusOK, gin.H{"data": "your data here"})
 }
