@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/ShekleinAleksey/jwt-auth/handler"
+	"github.com/ShekleinAleksey/jwt-auth/internal/handler"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
