@@ -2,14 +2,12 @@ package handler
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type TokenDetails struct {
@@ -61,21 +59,21 @@ func createToken(guid, ip string) (*TokenDetails, error) {
 }
 
 func saveRefreshToken(userID, refreshToken string) error {
-	hashedToken, err := bcrypt.GenerateFromPassword([]byte(refreshToken), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
+	// hashedToken, err := bcrypt.GenerateFromPassword([]byte(refreshToken), bcrypt.DefaultCost)
+	// if err != nil {
+	// 	return err
+	// }
 
-	db, err := db.getDB()
+	// db, err := db.getDB()
 
-	_, err := db.Exec(`INSERT INTO refresh_tokens (user_id, refresh_token_hash)
-        VALUES ($1, $2)
-        ON CONFLICT (user_id) DO UPDATE 
-        SET refresh_token_hash = $2, created_at = CURRENT_TIMESTAMP`, userID, string(hashedToken))
+	// _, err = db.Exec(`INSERT INTO refresh_tokens (user_id, refresh_token_hash)
+	//     VALUES ($1, $2)
+	//     ON CONFLICT (user_id) DO UPDATE
+	//     SET refresh_token_hash = $2, created_at = CURRENT_TIMESTAMP`, userID, string(hashedToken))
 
-	if err != nil {
-		log.Println("Error saving refresh token:", err)
-		return err
-	}
+	// if err != nil {
+	// 	log.Println("Error saving refresh token:", err)
+	// 	return err
+	// }
 	return nil
 }
