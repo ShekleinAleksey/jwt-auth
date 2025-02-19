@@ -24,6 +24,8 @@ func main() {
 	// })
 
 	r := gin.Default()
+	r.POST("/create-user", handler.CreateUser)
+	r.GET("/get-user", handler.GetUser)
 	r.POST("/create-token", handler.Token)
 	r.POST("/refresh-token", handler.Refresh)
 
