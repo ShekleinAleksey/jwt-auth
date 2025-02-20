@@ -18,12 +18,16 @@ func Refresh(c *gin.Context) {
 		return
 	}
 
-	userID := "extracted_user_id"
-	ip := "123"
-	tokens, err := createToken(userID, ip)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, err.Error())
-	}
+	// userID := "extracted_user_id"
+	// ip := "123"
+	// tokens, err := createToken(userID, ip)
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, err.Error())
+	// }
 
+	tokens := map[string]interface{}{
+		"access_token":  "access_token",
+		"refresh_token": "refresh_token",
+	}
 	c.JSON(http.StatusOK, tokens)
 }
