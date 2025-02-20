@@ -33,3 +33,11 @@ func (r *AuthRepository) GetUser(email, password string) (entity.User, error) {
 
 	return user, err
 }
+
+func (r *AuthRepository) GetUsers() ([]entity.User, error) {
+	var users []entity.User
+	query := fmt.Sprintf("SELECT id, first_name, last_name, email FROM users")
+	err := r.db.Select(&users, query)
+
+	return users, err
+}

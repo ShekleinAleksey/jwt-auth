@@ -51,7 +51,7 @@ func (h *Handler) signUp(c *gin.Context) {
 }
 
 type signInInput struct {
-	Username string `json:"username" binding:"required"`
+	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
@@ -75,7 +75,7 @@ func (h *Handler) signIn(c *gin.Context) {
 		return
 	}
 
-	token, err := h.service.AuthService.GenerateToken(input.Username, input.Password)
+	token, err := h.service.AuthService.GenerateToken(input.Email, input.Password)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -90,6 +90,26 @@ type TokenDetails struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	ExpiresAt    int64  `json:"expires_at"`
+}
+
+// @Summary GetUsers
+// @Tags auth
+// @Description get users
+// @ID get-users
+// @Accept  json
+// @Produce  json
+// @Success 200 {array} entity.User
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
+// @Router /auth/get-users [get]
+func (h *Handler) GetUsers(c *gin.Context) {
+	users, err := h.service.AuthService.GetUsers()
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
 }
 
 // func (h *Handler) Token(c *gin.Context) {

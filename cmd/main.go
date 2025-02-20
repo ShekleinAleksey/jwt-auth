@@ -14,6 +14,11 @@ import (
 	"github.com/spf13/viper"
 )
 
+// @title Auth Service
+// @version 1.0
+// @description API Service for Auth App
+// @host localhost:8080
+// @BasePath /
 func main() {
 	logrus.SetFormatter(&logrus.JSONFormatter{
 		TimestampFormat: "2006-01-02 15:04:05",

@@ -79,6 +79,10 @@ func generatePasswordHash(password string) string {
 	return fmt.Sprintf("%x", hash.Sum([]byte(salt)))
 }
 
+func (s *AuthService) GetUsers() ([]entity.User, error) {
+	return s.repo.GetUsers()
+}
+
 // func createToken(guid, ip string) (*TokenDetails, error) {
 // 	accessTokenExpiration := time.Now().Add(30 * time.Minute).Unix()
 // 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
