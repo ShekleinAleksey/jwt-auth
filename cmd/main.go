@@ -17,7 +17,7 @@ import (
 // @title Auth Service
 // @version 1.0
 // @description API Service for Auth App
-// @host http://95.174.91.82:8080
+// @host 95.174.91.82:8080
 // @BasePath /
 func main() {
 	logrus.SetFormatter(&logrus.JSONFormatter{
