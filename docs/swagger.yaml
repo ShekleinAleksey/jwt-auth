@@ -28,7 +28,7 @@ definitions:
     - email
     - password
     type: object
-host: localhost:8080
+host: http://95.174.91.82:8080
 info:
   contact: {}
   description: API Service for Auth App
