@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"net/http"
+
 	_ "github.com/ShekleinAleksey/jwt-auth/docs"
 	"github.com/ShekleinAleksey/jwt-auth/internal/service"
 	"github.com/gin-gonic/gin"
@@ -18,6 +20,17 @@ func NewHandler(service *service.Service) *Handler {
 
 func (h *Handler) InitRoutes() *gin.Engine {
 	router := gin.Default()
+
+	router.Use(func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+		c.Next()
+	})
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
