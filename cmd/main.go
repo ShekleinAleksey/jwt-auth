@@ -43,10 +43,11 @@ func main() {
 		SSLMode:  viper.GetString("db.sslmode"),
 		Password: os.Getenv("DB_PASSWORD"),
 	})
-	defer db.Close()
+
 	if err != nil {
 		log.Fatalf("error initializing db: %s", err.Error())
 	}
+	defer db.Close()
 
 	logrus.Info("Initializing repository...")
 	repos := repository.NewRepository(db)
@@ -57,6 +58,26 @@ func main() {
 
 	router := handlers.InitRoutes()
 
+	// certManager := autocert.Manager{
+	// 	Prompt:     autocert.AcceptTOS,
+	// 	HostPolicy: autocert.HostWhitelist("95.174.91.82", "www.95.174.91.82"),
+	// 	Cache:      autocert.DirCache("certs"), // Папка для хранения сертификатов
+	// }
+
+	// server := &http.Server{
+	// 	Addr:    ":443",
+	// 	Handler: router,
+	// 	TLSConfig: &tls.Config{
+	// 		GetCertificate: certManager.GetCertificate,
+	// 	},
+	// }
+	// go func() {
+	// 	// Перенаправление HTTP на HTTPS
+	// 	log.Fatal(http.ListenAndServe(":80", certManager.HTTPHandler(nil)))
+	// }()
+
+	// logrus.Info("Starting server...")
+	// server.ListenAndServeTLS("", "")
 	logrus.Info("Starting server...")
 	router.Run(":8080")
 }

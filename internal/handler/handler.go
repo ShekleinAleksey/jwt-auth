@@ -41,5 +41,10 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		auth.POST("/sign-in", h.signIn)
 	}
 
+	user := router.Group("/user")
+	{
+		user.DELETE("/:id", h.deleteUser)
+	}
+
 	return router
 }
