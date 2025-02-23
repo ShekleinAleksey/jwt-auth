@@ -28,3 +28,23 @@ func (h *Handler) deleteUser(c *gin.Context) {
 		Status: "ok",
 	})
 }
+
+// @Summary GetUsers
+// @Tags auth
+// @Description get users
+// @ID get-users
+// @Accept  json
+// @Produce  json
+// @Success 200 {array} entity.User
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
+// @Router /auth/get-users [get]
+func (h *Handler) GetUsers(c *gin.Context) {
+	users, err := h.service.AuthService.GetUsers()
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
+}
