@@ -39,6 +39,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		auth.GET("/get-users", h.GetUsers)
 		auth.POST("/sign-up", h.signUp)
 		auth.POST("/sign-in", h.signIn)
+		auth.POST("/refresh", h.Refresh)
 	}
 
 	user := router.Group("/user")

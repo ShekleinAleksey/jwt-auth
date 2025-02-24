@@ -23,6 +23,7 @@ const (
 	salt       = "hjqrhjqw124617ajfhajs"
 	signingKey = "qrkjk#4#%35FSFJlja#4353KSFjH"
 	tokenTTL   = 12 * time.Hour
+	refreshTTL = 30 * 24 * time.Hour
 )
 
 type tokenClaims struct {
@@ -32,24 +33,61 @@ type tokenClaims struct {
 
 func (s *AuthService) CreateUser(user entity.User) (int, error) {
 	user.Password = generatePasswordHash(user.Password)
-	return s.repo.CreateUser(user)
-}
-
-func (s *AuthService) GenerateToken(email, password string) (string, error) {
-	user, err := s.repo.GetUser(email, generatePasswordHash(password))
+	userID, err := s.repo.CreateUser(user)
 	if err != nil {
-		return "", err
+		return 0, err
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
+	return userID, nil
+}
+
+func (s *AuthService) CreateToken(email, password string) (string, string, error) {
+	user, err := s.repo.GetUser(email, generatePasswordHash(password))
+	if err != nil {
+		return "", "", errors.New("user not found")
+	}
+
+	accessToken, refreshToken, err := s.GenerateToken(user)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
+}
+
+func (s *AuthService) GenerateToken(user entity.User) (string, string, error) {
+
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(tokenTTL).Unix(),
 			IssuedAt:  time.Now().Unix(),
 		},
 		user.ID,
 	})
+	fmt.Println("accessToken: ", accessToken)
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
+		jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(refreshTTL).Unix(),
+			IssuedAt:  time.Now().Unix(),
+		},
+		user.ID,
+	})
+	accessTokenString, err := accessToken.SignedString([]byte(signingKey))
+	if err != nil {
+		return "", "", err
+	}
 
-	return token.SignedString([]byte(signingKey))
+	refreshTokenString, err := refreshToken.SignedString([]byte(signingKey))
+	if err != nil {
+		return "", "", err
+	}
+
+	err = s.repo.SaveRefreshToken(user.ID, refreshTokenString, refreshTTL)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessTokenString, refreshTokenString, nil
 }
 
 func (s *AuthService) ParseToken(accessToken string) (int, error) {
@@ -83,6 +121,52 @@ func (s *AuthService) GetUsers() ([]entity.User, error) {
 	return s.repo.GetUsers()
 }
 
+func (s *AuthService) FindRefreshToken(userID int) (string, error) {
+	refreshToken, err := s.repo.FindRefreshToken(userID)
+	if err != nil {
+		return "", err
+	}
+
+	return refreshToken, nil
+}
+
+func (s *AuthService) FindUser(userID int) (entity.User, error) {
+	user, err := s.repo.FindUserByID(userID)
+	if err != nil {
+		return entity.User{}, err
+	}
+
+	return user, nil
+}
+
+func (s *AuthService) RefreshToken(refreshToken string) (string, string, error) {
+	userID, err := s.ParseToken(refreshToken)
+	if err != nil {
+		return "", "", err
+	}
+
+	user, err := s.FindUser(userID)
+	if err != nil {
+		return "", "", err
+	}
+
+	savedRefreshToken, err := s.FindRefreshToken(userID)
+	if err != nil {
+		return "", "", err
+	}
+
+	if savedRefreshToken != refreshToken {
+		return "", "", errors.New("savedRefreshToken != refreshToken")
+	}
+
+	accessToken, newRefreshToken, err := s.GenerateToken(user)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessToken, newRefreshToken, nil
+}
+
 // func createToken(guid, ip string) (*TokenDetails, error) {
 // 	accessTokenExpiration := time.Now().Add(30 * time.Minute).Unix()
 // 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -107,24 +191,4 @@ func (s *AuthService) GetUsers() ([]entity.User, error) {
 // 		RefreshToken: refreshToken,
 // 		ExpiresAt:    accessTokenExpiration,
 // 	}, nil
-// }
-
-// func saveRefreshToken(userID, refreshToken string) error {
-// 	// hashedToken, err := bcrypt.GenerateFromPassword([]byte(refreshToken), bcrypt.DefaultCost)
-// 	// if err != nil {
-// 	// 	return err
-// 	// }
-
-// 	// db, err := db.getDB()
-
-// 	// _, err = db.Exec(`INSERT INTO refresh_tokens (user_id, refresh_token_hash)
-// 	//     VALUES ($1, $2)
-// 	//     ON CONFLICT (user_id) DO UPDATE
-// 	//     SET refresh_token_hash = $2, created_at = CURRENT_TIMESTAMP`, userID, string(hashedToken))
-
-// 	// if err != nil {
-// 	// 	log.Println("Error saving refresh token:", err)
-// 	// 	return err
-// 	// }
-// 	return nil
 // }

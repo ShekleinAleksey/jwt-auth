@@ -6,10 +6,14 @@ CREATE TABLE users (
     password_hash TEXT NOT NULL
 );
 
--- CREATE TABLE refresh_tokens (
---     id SERIAL PRIMARY KEY,
---     user_id UUID NOT NULL,
---     token_hash TEXT NOT NULL,
---     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---     expires_at TIMESTAMP NOT NULL
--- );
+CREATE TABLE refresh_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    token_hash TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NOT NULL,
+    CONSTRAINT fk_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+);

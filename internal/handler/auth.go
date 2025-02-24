@@ -34,19 +34,58 @@ func (h *Handler) signUp(c *gin.Context) {
 		return
 	}
 
-	id, err := h.service.AuthService.CreateUser(entity.User{
+	if input.Password == "" {
+		newErrorResponse(c, http.StatusBadRequest, "password is required")
+		return
+	}
+
+	if input.Email == "" {
+		newErrorResponse(c, http.StatusBadRequest, "email is required")
+		return
+	}
+
+	// Проверяем, существует ли пользователь с таким email
+	users, err := h.service.AuthService.GetUsers()
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	for _, u := range users {
+		if u.Email == input.Email {
+			newErrorResponse(c, http.StatusBadRequest, "user with this email already exists")
+			return
+		}
+	}
+
+	userID, err := h.service.AuthService.CreateUser(entity.User{
 		FirstName: input.FirstName,
 		LastName:  input.LastName,
 		Email:     input.Email,
 		Password:  input.Password,
 	})
+
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	accessToken, refreshToken, err := h.service.AuthService.CreateToken(input.Email, input.Password)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	user, err := h.service.AuthService.FindUser(userID)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	c.JSON(http.StatusOK, map[string]interface{}{
-		"id": id,
+		"user":          user,
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
 	})
 }
 
@@ -75,14 +114,15 @@ func (h *Handler) signIn(c *gin.Context) {
 		return
 	}
 
-	token, err := h.service.AuthService.GenerateToken(input.Email, input.Password)
+	accessToken, refreshToken, err := h.service.AuthService.CreateToken(input.Email, input.Password)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	c.JSON(http.StatusOK, map[string]interface{}{
-		"token": token,
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
 	})
 }
 
@@ -112,44 +152,37 @@ func (h *Handler) GetUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-// func (h *Handler) Refresh(c *gin.Context) {
-// 	var requestBody struct {
-// 		RefreshToken string `json:"refresh_token" binding:"required"`
-// 		Ip           string
-// 	}
+// @Summary Refresh
+// @Tags auth
+// @Description refresh token
+// @ID refresh
+// @Accept  json
+// @Produce  json
+// @Param input body TokenDetails true "refresh token"
+// @Success 200 {string} string "token"
+// @Failure 400,404 {object} errorResponse
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
+// @Router /auth/refresh [post]
+func (h *Handler) Refresh(c *gin.Context) {
+	var requestBody struct {
+		RefreshToken string `json:"refresh_token" binding:"required"`
+	}
 
-// 	err := c.ShouldBindJSON(&requestBody)
-// 	if err != nil {
-// 		c.JSON(http.StatusBadRequest, err.Error())
-// 		return
-// 	}
+	err := c.ShouldBindJSON(&requestBody)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
 
-// 	// userID := "extracted_user_id"
-// 	// ip := "123"
-// 	// tokens, err := createToken(userID, ip)
-// 	// if err != nil {
-// 	// 	c.JSON(http.StatusInternalServerError, err.Error())
-// 	// }
+	accessToken, refreshToken, err := h.service.AuthService.RefreshToken(requestBody.RefreshToken)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err.Error())
+		return
+	}
 
-// 	tokens := map[string]interface{}{
-// 		"access_token":  "access_token",
-// 		"refresh_token": "refresh_token",
-// 	}
-// 	c.JSON(http.StatusOK, tokens)
-// }
-
-// func (h *Handler) Token(c *gin.Context) {
-// 	guid := c.Query("guid")
-// 	ip := c.ClientIP()
-// 	fmt.Println("ip: ", ip)
-// 	tokens, err := createToken(guid, ip)
-// 	if err != nil {
-// 		c.JSON(http.StatusBadRequest, err.Error())
-// 	}
-// 	// _, err := uuid.Parse(guid)
-// 	// if err != nil {
-// 	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid GUID format"})
-// 	// 	return
-// 	// }
-// 	c.JSON(http.StatusOK, tokens)
-// }
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	})
+}

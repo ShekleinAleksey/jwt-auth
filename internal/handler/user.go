@@ -39,12 +39,12 @@ func (h *Handler) deleteUser(c *gin.Context) {
 // @Failure 500 {object} errorResponse
 // @Failure default {object} errorResponse
 // @Router /auth/get-users [get]
-func (h *Handler) GetUsers(c *gin.Context) {
-	users, err := h.service.AuthService.GetUsers()
-	if err != nil {
-		newErrorResponse(c, http.StatusInternalServerError, err.Error())
-		return
-	}
+// func (h *Handler) GetUsers(c *gin.Context) {
+// 	users, err := h.service.AuthService.GetUsers()
+// 	if err != nil {
+// 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+// 		return
+// 	}
 
-	c.JSON(http.StatusOK, users)
-}
+// 	c.JSON(http.StatusOK, users)
+// }
