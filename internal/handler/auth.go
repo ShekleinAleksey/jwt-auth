@@ -20,8 +20,8 @@ type signUpInput struct {
 // @ID create-account
 // @Accept  json
 // @Produce  json
-// @Param input body entity.User true "account info"
-// @Success 200 {integer} integer 1
+// @Param input body signUpInput true "account info"
+// @Success 200 {object} TokenDetails
 // @Failure 400,404 {object} errorResponse
 // @Failure 500 {object} errorResponse
 // @Failure default {object} errorResponse
@@ -70,7 +70,7 @@ func (h *Handler) signUp(c *gin.Context) {
 		return
 	}
 
-	accessToken, refreshToken, err := h.service.AuthService.CreateToken(input.Email, input.Password)
+	tokenDetails, err := h.service.AuthService.CreateToken(input.Email, input.Password)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -84,8 +84,7 @@ func (h *Handler) signUp(c *gin.Context) {
 
 	c.JSON(http.StatusOK, map[string]interface{}{
 		"user":          user,
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
+		"token_details": tokenDetails,
 	})
 }
 
@@ -101,7 +100,7 @@ type signInInput struct {
 // @Accept  json
 // @Produce  json
 // @Param input body signInInput true "credentials"
-// @Success 200 {string} string "token"
+// @Success 200 {object} TokenDetails
 // @Failure 400,404 {object} errorResponse
 // @Failure 500 {object} errorResponse
 // @Failure default {object} errorResponse
@@ -114,22 +113,25 @@ func (h *Handler) signIn(c *gin.Context) {
 		return
 	}
 
-	accessToken, refreshToken, err := h.service.AuthService.CreateToken(input.Email, input.Password)
+	tokenDetails, err := h.service.AuthService.CreateToken(input.Email, input.Password)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
+	c.JSON(http.StatusOK, TokenDetails{
+		AccessToken:      tokenDetails.AccessToken,
+		ExpiresIn:        tokenDetails.ExpiresIn,
+		RefreshToken:     tokenDetails.RefreshToken,
+		RefreshExpiresIn: tokenDetails.RefreshExpiresIn,
 	})
 }
 
 type TokenDetails struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresAt    int64  `json:"expires_at"`
+	AccessToken      string `json:"access_token"`
+	RefreshToken     string `json:"refresh_token"`
+	ExpiresIn        int64  `json:"expires_in"`
+	RefreshExpiresIn int64  `json:"refresh_expires_in"`
 }
 
 // @Summary GetUsers
@@ -159,7 +161,7 @@ func (h *Handler) GetUsers(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param input body TokenDetails true "refresh token"
-// @Success 200 {string} string "token"
+// @Success 200 {object} TokenDetails
 // @Failure 400,404 {object} errorResponse
 // @Failure 500 {object} errorResponse
 // @Failure default {object} errorResponse
@@ -175,14 +177,16 @@ func (h *Handler) Refresh(c *gin.Context) {
 		return
 	}
 
-	accessToken, refreshToken, err := h.service.AuthService.RefreshToken(requestBody.RefreshToken)
+	tokenDetails, err := h.service.AuthService.RefreshToken(requestBody.RefreshToken)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
+	c.JSON(http.StatusOK, TokenDetails{
+		AccessToken:      tokenDetails.AccessToken,
+		ExpiresIn:        tokenDetails.ExpiresIn,
+		RefreshToken:     tokenDetails.RefreshToken,
+		RefreshExpiresIn: tokenDetails.RefreshExpiresIn,
 	})
 }

@@ -81,9 +81,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "token",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.TokenDetails"
                         }
                     },
                     "400": {
@@ -140,9 +140,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "token",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.TokenDetails"
                         }
                     },
                     "400": {
@@ -193,7 +193,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/entity.User"
+                            "$ref": "#/definitions/handler.signUpInput"
                         }
                     }
                 ],
@@ -201,7 +201,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "integer"
+                            "$ref": "#/definitions/handler.TokenDetails"
                         }
                     },
                     "400": {
@@ -316,7 +316,10 @@ const docTemplate = `{
                 "access_token": {
                     "type": "string"
                 },
-                "expires_at": {
+                "expires_in": {
+                    "type": "integer"
+                },
+                "refresh_expires_in": {
                     "type": "integer"
                 },
                 "refresh_token": {
@@ -346,6 +349,29 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "handler.signUpInput": {
+            "type": "object",
+            "required": [
+                "email",
+                "first_name",
+                "last_name",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
         }
     }
 }`
@@ -360,6 +386,7 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "API Service for Auth App",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
+
 }
 
 func init() {

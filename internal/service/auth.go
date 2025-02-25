@@ -41,21 +41,21 @@ func (s *AuthService) CreateUser(user entity.User) (int, error) {
 	return userID, nil
 }
 
-func (s *AuthService) CreateToken(email, password string) (string, string, error) {
+func (s *AuthService) CreateToken(email, password string) (TokenDetails, error) {
 	user, err := s.repo.GetUser(email, generatePasswordHash(password))
 	if err != nil {
-		return "", "", errors.New("user not found")
+		return TokenDetails{}, errors.New("user not found")
 	}
 
-	accessToken, refreshToken, err := s.GenerateToken(user)
+	tokenDetails, err := s.GenerateToken(user)
 	if err != nil {
-		return "", "", err
+		return TokenDetails{}, err
 	}
 
-	return accessToken, refreshToken, nil
+	return tokenDetails, nil
 }
 
-func (s *AuthService) GenerateToken(user entity.User) (string, string, error) {
+func (s *AuthService) GenerateToken(user entity.User) (TokenDetails, error) {
 
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
 		jwt.StandardClaims{
@@ -74,23 +74,46 @@ func (s *AuthService) GenerateToken(user entity.User) (string, string, error) {
 	})
 	accessTokenString, err := accessToken.SignedString([]byte(signingKey))
 	if err != nil {
-		return "", "", err
+		return TokenDetails{}, err
 	}
 
 	refreshTokenString, err := refreshToken.SignedString([]byte(signingKey))
 	if err != nil {
-		return "", "", err
+		return TokenDetails{}, err
 	}
 
 	err = s.repo.SaveRefreshToken(user.ID, refreshTokenString, refreshTTL)
 	if err != nil {
-		return "", "", err
+		return TokenDetails{}, err
 	}
 
-	return accessTokenString, refreshTokenString, nil
+	claims, err := s.ParseToken(accessTokenString)
+	if err != nil {
+		return TokenDetails{}, err
+	}
+	expiresIn := claims.ExpiresAt
+	claimsRefresh, err := s.ParseToken(refreshTokenString)
+	if err != nil {
+		return TokenDetails{}, err
+	}
+	refreshExpiresIn := claimsRefresh.ExpiresAt
+
+	return TokenDetails{
+		AccessToken:      accessTokenString,
+		RefreshToken:     refreshTokenString,
+		ExpiresIn:        expiresIn,
+		RefreshExpiresIn: refreshExpiresIn,
+	}, nil
 }
 
-func (s *AuthService) ParseToken(accessToken string) (int, error) {
+type TokenDetails struct {
+	AccessToken      string `json:"access_token"`
+	RefreshToken     string `json:"refresh_token"`
+	ExpiresIn        int64  `json:"expires_in"`
+	RefreshExpiresIn int64  `json:"refresh_expires_in"`
+}
+
+func (s *AuthService) ParseToken(accessToken string) (*tokenClaims, error) {
 	token, err := jwt.ParseWithClaims(accessToken, &tokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("invalid signing method")
@@ -99,15 +122,15 @@ func (s *AuthService) ParseToken(accessToken string) (int, error) {
 		return []byte(signingKey), nil
 	})
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	claims, ok := token.Claims.(*tokenClaims)
 	if !ok {
-		return 0, errors.New("token claims are not of type *tokenClaims")
+		return nil, errors.New("token claims are not of type *tokenClaims")
 	}
 
-	return claims.UserId, nil
+	return claims, nil
 }
 
 func generatePasswordHash(password string) string {
@@ -139,32 +162,33 @@ func (s *AuthService) FindUser(userID int) (entity.User, error) {
 	return user, nil
 }
 
-func (s *AuthService) RefreshToken(refreshToken string) (string, string, error) {
-	userID, err := s.ParseToken(refreshToken)
+func (s *AuthService) RefreshToken(refreshToken string) (TokenDetails, error) {
+	claims, err := s.ParseToken(refreshToken)
+	userID := claims.UserId
 	if err != nil {
-		return "", "", err
+		return TokenDetails{}, err
 	}
 
 	user, err := s.FindUser(userID)
 	if err != nil {
-		return "", "", err
+		return TokenDetails{}, err
 	}
 
 	savedRefreshToken, err := s.FindRefreshToken(userID)
 	if err != nil {
-		return "", "", err
+		return TokenDetails{}, err
 	}
 
 	if savedRefreshToken != refreshToken {
-		return "", "", errors.New("savedRefreshToken != refreshToken")
+		return TokenDetails{}, errors.New("savedRefreshToken != refreshToken")
 	}
 
-	accessToken, newRefreshToken, err := s.GenerateToken(user)
+	tokenDetails, err := s.GenerateToken(user)
 	if err != nil {
-		return "", "", err
+		return TokenDetails{}, err
 	}
 
-	return accessToken, newRefreshToken, nil
+	return tokenDetails, nil
 }
 
 // func createToken(guid, ip string) (*TokenDetails, error) {
