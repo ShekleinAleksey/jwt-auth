@@ -47,5 +47,10 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		user.DELETE("/:id", h.deleteUser)
 	}
 
+	files := router.Group("/files")
+	{
+		files.POST("/upload", h.UploadFile)
+	}
+
 	return router
 }
