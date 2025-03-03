@@ -55,6 +55,11 @@ definitions:
     - last_name
     - password
     type: object
+  handler.statusResponse:
+    properties:
+      status:
+        type: string
+    type: object
 host: 95.174.91.82:8080
 info:
   contact: {}
@@ -205,6 +210,44 @@ paths:
       summary: SignUp
       tags:
       - auth
+  /files/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: uploadFile
+      operationId: uploadFile
+      parameters:
+      - description: Файл для загрузки
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.statusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: UploadFile
+      tags:
+      - files
   /user/{id}:
     delete:
       consumes:

@@ -6,6 +6,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// @Summary UploadFile
+// @Tags files
+// @Description uploadFile
+// @ID uploadFile
+// @Accept multipart/form-data
+// @Produce json
+// @Param file formData file true "Файл для загрузки"
+// @Success 200 {object} statusResponse
+// @Failure 400,404 {object} errorResponse
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
+// @Router /files/upload [post]
 func (h *Handler) UploadFile(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -19,8 +31,7 @@ func (h *Handler) UploadFile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message":  "файл успешно загружен",
-		"filename": file.Filename,
+	c.JSON(http.StatusOK, statusResponse{
+		Status: "походу загрузилось",
 	})
 }
